@@ -189,7 +189,7 @@ Content-Type: application/json
    }
    ```
 
-2. **`time_only`**: Alarme por tempo
+2. **`time_only`**: Alarme por tempo (Feature Futura)
    ```json
    {
      "mode": "time_only", 
@@ -205,7 +205,7 @@ Content-Type: application/json
    }
    ```
 
-4. **`boiling_then_time`**: Aguarda ebulição, depois conta tempo
+4. **`boiling_then_time`**: Aguarda ebulição, depois conta tempo (Feature Futura)
    ```json
    {
      "mode": "boiling_then_time",
