@@ -1,0 +1,13 @@
+flask==2.3.3
+flask-cors==4.0.0
+paho-mqtt==1.6.1
+numpy==1.24.3
+matplotlib==3.7.1
+plotly==5.15.0
+dash==2.13.0
+dash-bootstrap-components==1.4.1
+requests==2.31.0
+python-dotenv==1.0.0
+blynk-library-python==1.0.0
+schedule==1.2.0
+pygame==2.5.0
