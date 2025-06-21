@@ -8,30 +8,24 @@ import json
 import time
 import threading
 import logging
+import os
+import sys
 from datetime import datetime, timedelta
 import plotly.graph_objs as go
 import plotly.utils
 from config import Config, calculate_boiling_point, DEVICE_ID, DEVICE_NAME
 try:
-    from temperature_sensor import TemperatureSensor
     from pressure_sensor import PressureSensor, ALTITUDE_PRESETS
     from mqtt_client import MQTTClient
     from smart_alarm_manager import SmartAlarmManager
+    from simple_temperature_sensor_precision import PrecisionTemperatureSensor
 except ImportError:
     # Try absolute imports if relative imports fail
-    import sys
-    import os
     sys.path.append(os.path.dirname(__file__))
-    from temperature_sensor import TemperatureSensor
     from pressure_sensor import PressureSensor, ALTITUDE_PRESETS
     from mqtt_client import MQTTClient
     from smart_alarm_manager import SmartAlarmManager
-
-# Import simple sensor as backup
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from simple_temperature_sensor_precision import PrecisionTemperatureSensor
+    from simple_temperature_sensor_precision import PrecisionTemperatureSensor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -385,24 +379,24 @@ def system_status():
     """API endpoint for system status"""
     try:
         mqtt_status = mqtt_client.get_connection_status() if mqtt_client else {'connected': False}
-          return jsonify({
-            'sensors': {
-                'temperature': {
-                    'active': hasattr(temperature_sensor, 'running') and temperature_sensor.running,
-                    'failed': False,
-                    'heating': temperature_sensor.is_heating,
-                    'target_temp': temperature_sensor.get_target_temperature()
-                },
-                'pressure': {
-                    'active': pressure_sensor.is_active,
-                    'failed': pressure_sensor.is_failed,
-                    'altitude': pressure_sensor.altitude_meters
-                }
+        return jsonify({
+        'sensors': {
+            'temperature': {
+                'active': hasattr(temperature_sensor, 'running') and temperature_sensor.running,
+                'failed': False,
+                'heating': temperature_sensor.is_heating,
+                'target_temp': temperature_sensor.get_target_temperature()
             },
-            'mqtt': mqtt_status,
-            'data_collection': data_collection_active,
-            'data_points': len(data_history['timestamps'])
-        })
+            'pressure': {
+                'active': pressure_sensor.is_active,
+                'failed': pressure_sensor.is_failed,
+                'altitude': pressure_sensor.altitude_meters
+            }
+        },
+        'mqtt': mqtt_status,
+        'data_collection': data_collection_active,
+        'data_points': len(data_history['timestamps'])
+    })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -527,6 +521,56 @@ def force_alarm_check():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/debug/test_alarm_system', methods=['POST'])
+def test_alarm_system():
+    """Testa todo o sistema de alarmes passo a passo"""
+    try:
+        results = []
+        
+        # Passo 1: Verificar se alarm_manager existe
+        if not alarm_manager:
+            return jsonify({'error': 'Alarm manager não inicializado'}), 500
+        results.append("✅ Alarm manager existe")
+        
+        # Passo 2: Verificar se está monitorando
+        if not alarm_manager.is_monitoring:
+            alarm_manager.start_monitoring()
+            results.append("🔄 Monitoring ativado")
+        else:
+            results.append("✅ Monitoring já ativo")
+        
+        # Passo 3: Configurar alarme de teste
+        success = alarm_manager.configure_alarm('temperature_only', threshold=50.0)
+        if success:
+            results.append("✅ Alarme configurado (threshold: 50°C)")
+        else:
+            results.append("❌ Falha ao configurar alarme")
+            
+        # Passo 4: Simular temperatura alta para disparar alarme
+        simulated_temp_data = {'temperature': 80.0}  # Acima do threshold de 50°C
+        pressure_data = pressure_sensor.get_sensor_data()
+        boiling_point = calculate_boiling_point(pressure_data.get('pressure', 1.0) if pressure_data else 1.0)
+        
+        triggered_alarms = alarm_manager.check_alarms(simulated_temp_data, pressure_data, boiling_point)
+        
+        if triggered_alarms:
+            results.append(f"🚨 {len(triggered_alarms)} alarme(s) disparado(s)!")
+            for alarm in triggered_alarms:
+                results.append(f"   - {alarm['type']}: {alarm['message']}")
+        else:
+            results.append("❌ Nenhum alarme disparado")
+        
+        return jsonify({
+            'success': True,
+            'test_results': results,
+            'simulated_temp': 80.0,
+            'threshold': 50.0,
+            'triggered_alarms_count': len(triggered_alarms)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Force module reload for development
 import importlib
 def reload_sensor_module():
@@ -558,6 +602,44 @@ def reload_sensor():
             return jsonify({'success': False, 'message': 'Failed to reload sensor module'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/debug/system_full_status')
+def debug_system_full_status():
+    """Debug completo do estado do sistema"""
+    try:
+        status = {
+            'timestamp': datetime.now().isoformat(),
+            'data_collection_active': data_collection_active,
+            'sensors': {
+                'temperature_sensor_exists': temperature_sensor is not None,
+                'pressure_sensor_exists': pressure_sensor is not None,
+            },
+            'alarm_manager': {
+                'exists': alarm_manager is not None,
+                'is_monitoring': alarm_manager.is_monitoring if alarm_manager else False,
+                'config': alarm_manager.current_alarm_config if alarm_manager else None,
+                'active_alarms': len(alarm_manager.active_alarms) if alarm_manager else 0
+            }
+        }
+        
+        # Testar leitura de sensores
+        if temperature_sensor and pressure_sensor:
+            try:
+                pressure_data = pressure_sensor.get_sensor_data()
+                temp_data = temperature_sensor.get_data(pressure_data.get('pressure', 1.0) if pressure_data else 1.0)
+                boiling_point = calculate_boiling_point(pressure_data.get('pressure', 1.0) if pressure_data else 1.0)
+                
+                status['current_readings'] = {
+                    'temperature': temp_data.get('temperature') if temp_data else None,
+                    'pressure': pressure_data.get('pressure') if pressure_data else None,
+                    'boiling_point': boiling_point
+                }
+            except Exception as e:
+                status['sensor_error'] = str(e)
+        
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     try:

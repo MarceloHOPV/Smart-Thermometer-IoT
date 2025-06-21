@@ -140,14 +140,10 @@ class MQTTClient:
     def _handle_config_message(self, payload):
         """Handle configuration messages"""
         logger.info(f"Configuration message received: {payload}")
-        # Configuration handling would be implemented here
-        # For example: updating alarm thresholds, sensor calibration, etc.
     
     def _handle_control_message(self, payload):
         """Handle control messages"""
         logger.info(f"Control message received: {payload}")
-        # Control handling would be implemented here
-        # For example: start/stop heating, reset sensors, etc.
     
     def publish_temperature_data(self, temperature_data):
         """Publish temperature sensor data"""
