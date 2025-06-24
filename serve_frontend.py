@@ -43,7 +43,6 @@ def serve_frontend(port=3000, open_browser=True):
 if __name__ == "__main__":
     port = 3000
     
-    # Check for custom port argument
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])

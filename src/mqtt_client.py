@@ -8,7 +8,7 @@ import threading
 import logging
 from datetime import datetime
 from paho.mqtt.client import Client
-from config import Config, DEVICE_ID, DEVICE_NAME
+from .config import Config, DEVICE_ID, DEVICE_NAME
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -65,7 +65,6 @@ class MQTTClient:
             
             logger.info(f"Received message on topic {topic}: {payload}")
             
-            # Handle different message types
             if topic in self.message_handlers:
                 self.message_handlers[topic](payload)
             else:
@@ -224,14 +223,12 @@ class MQTTClient:
             'queued_messages': len(self.message_queue)
         }
 
-# Example usage and testing
 if __name__ == "__main__":
     mqtt_client = MQTTClient()
     
     if mqtt_client.connect():
         print("MQTT client connected successfully")
         
-        # Test publishing some data
         test_temp_data = {
             'temperature': 25.5,
             'device_id': DEVICE_ID,

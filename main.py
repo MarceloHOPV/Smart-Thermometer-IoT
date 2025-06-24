@@ -12,10 +12,10 @@ from datetime import datetime
 
 # Import all modules
 from src.config import Config, DEVICE_ID, DEVICE_NAME
-from src.temperature_sensor import TemperatureSensor
+from src.simple_temperature_sensor_precision import PrecisionTemperatureSensor
 from src.pressure_sensor import PressureSensor, ALTITUDE_PRESETS
 from src.mqtt_client import MQTTClient
-from src.alarm_manager import AlarmManager, AlarmType
+from src.smart_alarm_manager import SmartAlarmManager
 from src.web_app import app as web_app, initialize_systems, start_data_collection, stop_data_collection
 from src.mobile_app import mobile_app
 
@@ -50,7 +50,7 @@ class SmartThermometerSystem:
         try:
             # Initialize sensors
             logger.info("Initializing sensors...")
-            self.temperature_sensor = TemperatureSensor(f"{DEVICE_ID}_temp")
+            self.temperature_sensor = PrecisionTemperatureSensor(f"{DEVICE_ID}_temp")
             self.pressure_sensor = PressureSensor(f"{DEVICE_ID}_pressure")
             
             # Initialize MQTT client
@@ -62,7 +62,7 @@ class SmartThermometerSystem:
             
             # Initialize alarm manager
             logger.info("Initializing alarm manager...")
-            self.alarm_manager = AlarmManager(self.mqtt_client)
+            self.alarm_manager = SmartAlarmManager(self.mqtt_client)
             
             # Set up default alarm configurations
             self.alarm_manager.set_temperature_alarm(Config.DEFAULT_ALARM_TEMPERATURE)

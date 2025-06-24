@@ -9,19 +9,17 @@ __description__ = "IoT Smart Thermometer for Food Monitoring"
 
 # Package imports
 from .config import Config, DEVICE_ID, DEVICE_NAME
-from .temperature_sensor import TemperatureSensor
+from .simple_temperature_sensor_precision import PrecisionTemperatureSensor
 from .pressure_sensor import PressureSensor
 from .mqtt_client import MQTTClient
-from .alarm_manager import AlarmManager, AlarmType, AlarmPriority
+from .smart_alarm_manager import SmartAlarmManager
 
 __all__ = [
     'Config',
     'DEVICE_ID', 
     'DEVICE_NAME',
-    'TemperatureSensor',
+    'PrecisionTemperatureSensor',
     'PressureSensor', 
     'MQTTClient',
-    'AlarmManager',
-    'AlarmType',
-    'AlarmPriority'
+    'SmartAlarmManager'
 ]

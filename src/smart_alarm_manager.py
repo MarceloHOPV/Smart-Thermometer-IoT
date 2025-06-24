@@ -121,8 +121,7 @@ class SmartAlarmManager:
                     alarm = self._create_alarm('TEMPERATURE', 
                         f"🌡️ Temperatura atingiu {current_temp:.1f}°C (limite: {threshold}°C)",
                         {'current_value': current_temp, 'threshold': threshold})
-                    triggered_alarms.append(alarm)
-                          # Alarme de ebulição
+                    triggered_alarms.append(alarm)            # Alarme de ebulição
             elif mode == 'boiling_only':
                 if boiling_point:
                     boiling_threshold = boiling_point + self.current_alarm_config.get('boiling_offset', 0.0)
@@ -299,20 +298,16 @@ class SmartAlarmManager:
         logger.info("Sistema de alarmes parado")
 
 if __name__ == "__main__":
-    # Test the alarm manager
     print("Testing SmartAlarmManager...")
     manager = SmartAlarmManager()
     print("✅ SmartAlarmManager initialized")
     
-    # Test temperature alarm
     manager.configure_alarm('temperature_only', threshold=85.0)
     print("✅ Temperature alarm configured")
     
-    # Test status
     status = manager.get_status()
     print(f"✅ Status: {status}")
     
-    # Test alarm check
     temp_data = {'temperature': 90.0}
     pressure_data = {'pressure': 1.0}
     alarms = manager.check_alarms(temp_data, pressure_data, 100.0)

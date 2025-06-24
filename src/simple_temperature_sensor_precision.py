@@ -139,16 +139,13 @@ class PrecisionTemperatureSensor:
         logger.info(f"Aquecimento {'ligado' if enable else 'desligado'}")
 
 if __name__ == "__main__":
-    # Test the sensor
     print("Testing PrecisionTemperatureSensor...")
     sensor = PrecisionTemperatureSensor()
     print("Sensor initialized successfully")
     
-    # Test get_data method
     data = sensor.get_data()
     print(f"Sample data: {data}")
     
-    # Test with pressure parameter
     data_with_pressure = sensor.get_data(1.2)
     print(f"Data with pressure: {data_with_pressure}")
     

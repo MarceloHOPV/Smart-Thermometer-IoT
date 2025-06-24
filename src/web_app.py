@@ -13,14 +13,13 @@ import sys
 from datetime import datetime, timedelta
 import plotly.graph_objs as go
 import plotly.utils
-from config import Config, calculate_boiling_point, DEVICE_ID, DEVICE_NAME
+from .config import Config, calculate_boiling_point, DEVICE_ID, DEVICE_NAME
 try:
-    from pressure_sensor import PressureSensor, ALTITUDE_PRESETS
-    from mqtt_client import MQTTClient
-    from smart_alarm_manager import SmartAlarmManager
-    from simple_temperature_sensor_precision import PrecisionTemperatureSensor
+    from .pressure_sensor import PressureSensor, ALTITUDE_PRESETS
+    from .mqtt_client import MQTTClient
+    from .smart_alarm_manager import SmartAlarmManager
+    from .simple_temperature_sensor_precision import PrecisionTemperatureSensor
 except ImportError:
-    # Try absolute imports if relative imports fail
     sys.path.append(os.path.dirname(__file__))
     from pressure_sensor import PressureSensor, ALTITUDE_PRESETS
     from mqtt_client import MQTTClient
@@ -69,7 +68,6 @@ def initialize_systems():
     """Initialize all system components"""
     global temperature_sensor, pressure_sensor, mqtt_client, alarm_manager
     
-    # Use simple temperature sensor for better stability
     temperature_sensor = PrecisionTemperatureSensor()
     pressure_sensor = PressureSensor("web_pressure_sensor")
     
@@ -297,11 +295,9 @@ def set_altitude():
 def get_alarms():
     """API endpoint for alarm status"""
     try:
-        # Use new SmartAlarmManager status method
         status = alarm_manager.get_status()
         return jsonify(status)
     except Exception as e:
-        # Return a safe error response
         return jsonify({
             'error': str(e),
             'alarm_mode': None,
@@ -317,7 +313,6 @@ def configure_alarms():
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-          # Validate and configure alarm mode (EXCLUSIVE)
         alarm_mode = data.get('mode')
         if not alarm_mode:
             return jsonify({'error': 'Alarm mode is required'}), 400
@@ -400,7 +395,6 @@ def system_status():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# DEBUG: Simple alarm test route
 @app.route('/api/debug/alarms')
 def debug_alarms():
     """Simple debug route for alarm testing"""
@@ -571,7 +565,6 @@ def test_alarm_system():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Force module reload for development
 import importlib
 def reload_sensor_module():
     """Force reload of sensor modules for development"""
@@ -622,7 +615,6 @@ def debug_system_full_status():
             }
         }
         
-        # Testar leitura de sensores
         if temperature_sensor and pressure_sensor:
             try:
                 pressure_data = pressure_sensor.get_sensor_data()
@@ -640,6 +632,20 @@ def debug_system_full_status():
         return jsonify(status)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# Auto-initialize systems when module is imported (for development/testing)
+def ensure_systems_initialized():
+    """Ensure systems are initialized, call if needed"""
+    global temperature_sensor, pressure_sensor, mqtt_client, alarm_manager
+    if temperature_sensor is None or pressure_sensor is None:
+        logger.info("Auto-initializing systems...")
+        initialize_systems()
+
+# Initialize on import for API endpoints to work
+try:
+    ensure_systems_initialized()
+except Exception as e:
+    logger.warning(f"Failed to auto-initialize systems: {e}")
 
 if __name__ == '__main__':
     try:
